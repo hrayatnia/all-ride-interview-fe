@@ -25,32 +25,28 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success'
 
     steps:
-      - name: 🛑 Fail early if no artifact name file is found
-        run: |
-          if [ ! -f artifact-name.txt ]; then
-            echo "Artifact name file missing. Cannot proceed."
-            exit 1
-          fi
-
       - name: 📥 Download Artifact Metadata (Name)
         uses: dawidd6/action-download-artifact@v2
         with:
-          workflow: "All Ride Interview Frontend CI"
-          branch: main
+          run_id: ${{ github.event.workflow_run.id }}
           name: artifact-name
           path: meta
 
       - name: 🧾 Read Artifact Name
         id: read_name
         run: |
+          if [ ! -f meta/artifact-name.txt ]; then
+            echo "Error: meta/artifact-name.txt not found after download."
+            exit 1
+          fi
           ARTIFACT_NAME=$(cat meta/artifact-name.txt)
+          echo "Read artifact name: $ARTIFACT_NAME"
           echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
 
       - name: 💾 Download Build Artifact
         uses: dawidd6/action-download-artifact@v2
         with:
-          workflow: "All Ride Interview Frontend CI"
-          branch: main
+          run_id: ${{ github.event.workflow_run.id }}
           name: ${{ steps.read_name.outputs.artifact_name }}
           path: build
 
