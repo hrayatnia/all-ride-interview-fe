@@ -122,6 +122,7 @@ jobs:
             echo "name=$SAFE_COMMIT_MSG" >> $GITHUB_OUTPUT
             echo "$SAFE_COMMIT_MSG" > artifact-name.txt
 
+
       - name: 📦 Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
