@@ -1,0 +1,138 @@
+name: All Ride Interview Frontend CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'releases/*'
+      - 'hotfixes/*'
+      - 'devops/*'
+      - 'feature/*'
+      - 'bugfix/*'
+      - 'chore/*'
+  pull_request:
+    branches:
+      - main
+      - 'releases/*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: 🧹 Lint Code
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js (v18) and cache Yarn
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+
+      - name: ♻️ Restore/Cache node_modules
+        uses: actions/cache@v4
+        id: cache-node-modules
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: 📦 Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: 🧹 Run ESLint
+        run: yarn lint
+
+  test:
+    name: 🧪 Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js (v18) and cache Yarn
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+
+      - name: ♻️ Restore/Cache node_modules
+        uses: actions/cache@v4
+        id: cache-node-modules
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: 📦 Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: 🧪 Run Jest Tests
+        run: yarn test --watchAll=false
+
+  build:
+    name: 🛠️ Build & Publish Artifacts
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    timeout-minutes: 15
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js (v18) and cache Yarn
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+
+      - name: ♻️ Restore/Cache node_modules
+        uses: actions/cache@v4
+        id: cache-node-modules
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: 📦 Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: 🛠️ Build React App
+        run: yarn build
+
+      - name: 📝 Get Commit Message and Format as Artifact Name
+        id: commit
+        run: |
+            COMMIT_MSG=$(git log -1 --pretty=%B)
+            # Sanitize commit message: keep alnum, dot, underscore, dash; replace spaces with dash
+            SAFE_COMMIT_MSG=$(echo "$COMMIT_MSG" | tr ' ' '-' | tr -cd '[:alnum:]._-' | cut -c1-100)
+            # Fallback if empty
+            if [ -z "$SAFE_COMMIT_MSG" ]; then
+            SAFE_COMMIT_MSG="build-artifact"
+            fi
+            echo "name=$SAFE_COMMIT_MSG" >> $GITHUB_OUTPUT
+            echo "$SAFE_COMMIT_MSG" > artifact-name.txt
+
+
+      - name: 📦 Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.commit.outputs.name }}
+          path: build
+
+      - name: 📝 Upload Artifact Name Metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-name
+          path: artifact-name.txt
