@@ -2,16 +2,17 @@ name: Deploy to GitHub Pages
 
 on:
   workflow_run:
-    workflows: ["All Ride Interview Frontend CI"] # Name of your CI workflow
+    workflows: ["All Ride Interview Frontend CI"]
     types:
       - completed
     branches:
-      - main # Only deploy when the CI on main branch completes
+      - main
+      - 'devops/**'
 
 permissions:
-  contents: write # Required to push to gh-pages branch
-  pages: write    # Required to deploy to GitHub Pages
-  id-token: write # Required for trusted deployments (if using OIDC)
+  contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -21,29 +22,45 @@ jobs:
   deploy:
     name: 🚀 Deploy to GitHub Pages
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success' # Only run if the CI workflow succeeded
+    if: github.event.workflow_run.conclusion == 'success'
 
     steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4
-        # No need to checkout the full history for deployment usually
+      - name: 🛑 Fail early if no artifact name file is found
+        run: |
+          if [ ! -f artifact-name.txt ]; then
+            echo "Artifact name file missing. Cannot proceed."
+            exit 1
+          fi
+
+      - name: 📥 Download Artifact Metadata (Name)
+        uses: dawidd6/action-download-artifact@v2
         with:
-          fetch-depth: 0 # Fetches all history for all branches and tags
+          workflow: "All Ride Interview Frontend CI"
+          branch: main
+          name: artifact-name
+          path: meta
+
+      - name: 🧾 Read Artifact Name
+        id: read_name
+        run: |
+          ARTIFACT_NAME=$(cat meta/artifact-name.txt)
+          echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+
+      - name: 💾 Download Build Artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: "All Ride Interview Frontend CI"
+          branch: main
+          name: ${{ steps.read_name.outputs.artifact_name }}
+          path: build
 
       - name: 🔧 Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: 💾 Download Build Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: react-build # Must match the artifact name in your CI workflow
-          path: build # Destination directory for the artifact
-
       - name: 📤 Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload the 'build' directory (or wherever your React app builds to)
-          path: './build'
+          path: ./build
 
       - name: 🚀 Deploy to GitHub Pages
         id: deployment
