@@ -1,6 +1,6 @@
 import React from 'react';
+import { Routes, Route } from 'react-router-dom';
 import logo from './logo.svg';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css';
 
 function Home() {
@@ -22,17 +22,21 @@ function Home() {
   );
 }
 
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+    </Routes>
+  );
+}
+
 function App() {
   return (
     <div className="App">
-      <BrowserRouter basename="/all-ride-interview-fe">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          {/* Add other routes here if needed */}
-        </Routes>
-      </BrowserRouter>
+      <AppRoutes />
     </div>
   );
 }
 
 export default App;
+export { AppRoutes };
