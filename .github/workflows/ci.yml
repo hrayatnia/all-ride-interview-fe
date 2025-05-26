@@ -79,7 +79,7 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: 🧪 Run Jest Tests
-        run: yarn test --watchAll=false
+        run: yarn test --ci --coverage
 
   build:
     name: 🛠️ Build & Publish Artifacts
@@ -108,20 +108,21 @@ jobs:
       - name: 📦 Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: 🛠️ Build React App
+      - name: 🛠️ Build with Webpack
         run: yarn build
+        env:
+          NODE_ENV: production
 
       - name: 📝 Get Commit Message and Format as Artifact Name
         id: commit
         run: |
-            COMMIT_MSG=$(git log -1 --pretty=%B)
-            SAFE_COMMIT_MSG=$(echo "$COMMIT_MSG" | tr ' ' '-' | tr -cd '[:alnum:]._-' | cut -c1-100)
-            if [ -z "$SAFE_COMMIT_MSG" ]; then
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          SAFE_COMMIT_MSG=$(echo "$COMMIT_MSG" | tr ' ' '-' | tr -cd '[:alnum:]._-' | cut -c1-100)
+          if [ -z "$SAFE_COMMIT_MSG" ]; then
             SAFE_COMMIT_MSG="build-artifact"
-            fi
-            echo "name=$SAFE_COMMIT_MSG" >> $GITHUB_OUTPUT
-            echo "$SAFE_COMMIT_MSG" > artifact-name.txt
-
+          fi
+          echo "name=$SAFE_COMMIT_MSG" >> $GITHUB_OUTPUT
+          echo "$SAFE_COMMIT_MSG" > artifact-name.txt
 
       - name: 📦 Upload Build Artifact
         uses: actions/upload-artifact@v4
