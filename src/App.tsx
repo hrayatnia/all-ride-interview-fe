@@ -1,41 +1,28 @@
+import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import logo from './logo.svg';
-import './App.css';
+import { Layout, Typography } from 'antd';
+import { config } from './config/env';
+import { UserImport } from './components/UserImport/UserImport';
+import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 
-function Home() {
-  return (
-    <header className="App-header">
-      <img src={logo} className="App-logo" alt="logo" />
-      <p>
-        Edit <code>src/App.tsx</code> and save to reload.
-      </p>
-      <a
-        className="App-link"
-        href="https://reactjs.org"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Learn React
-      </a>
-    </header>
-  );
-}
+const { Header, Content } = Layout;
+const { Title } = Typography;
 
-function AppRoutes() {
+const App: React.FC = () => {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-    </Routes>
+    <ErrorBoundary>
+      <Layout data-testid="app-container" style={{ minHeight: '100vh' }}>
+        <Header data-testid="app-header" style={{ background: '#fff', padding: '0 24px' }}>
+          <Title level={2} data-testid="app-title" style={{ margin: '16px 0' }}>{config.appTitle}</Title>
+        </Header>
+        <Content data-testid="app-content" style={{ padding: '24px', background: '#f0f2f5' }}>
+          <Routes>
+            <Route path="/" element={<UserImport />} />
+          </Routes>
+        </Content>
+      </Layout>
+    </ErrorBoundary>
   );
-}
-
-function App() {
-  return (
-    <div className="App">
-      <AppRoutes />
-    </div>
-  );
-}
+};
 
 export default App;
-export { AppRoutes };
