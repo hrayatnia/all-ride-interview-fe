@@ -7,7 +7,7 @@ import { validateUsers, importUsers } from '../../store/userSlice';
 import Papa from 'papaparse';
 import { User, ImportResult } from '../../types/user';
 import { ImportResults } from './ImportResults';
-import { logger } from '../../utils/logger';
+import { logger, LogData } from '../../utils/logger';
 
 const { Dragger } = Upload;
 const { Title } = Typography;
@@ -55,7 +55,7 @@ export const UserImport: React.FC = () => {
         logger.warn('Validation found errors', { failedCount: result.failed.length });
       }
     } catch (error) {
-      logger.error('Validation failed', error);
+      logger.error('Validation failed', { error: error as LogData });
       message.error('Failed to validate users');
     }
   };
@@ -73,7 +73,7 @@ export const UserImport: React.FC = () => {
         logger.warn('Import found errors', { failedCount: result.failed.length });
       }
     } catch (error) {
-      logger.error('Import failed', error);
+      logger.error('Import failed', { error: error as LogData });
       message.error('Failed to import users');
     }
   };
@@ -118,7 +118,7 @@ export const UserImport: React.FC = () => {
         };
         reader.readAsText(actualFile);
       } catch (error) {
-        logger.error('File upload failed', error);
+        logger.error('File upload failed', { error: error as LogData });
         if (onError) onError(error as Error);
       }
     },
