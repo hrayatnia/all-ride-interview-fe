@@ -1,164 +1,356 @@
 import React, { useState } from 'react';
-import { Upload, message, Card, Typography, Steps, Button, Space } from 'antd';
-import type { RcFile } from 'antd/es/upload/interface';
-import { InboxOutlined, UploadOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Card, Typography, Button, Space, Input, Alert, Table } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import type { StepProps } from 'antd';
+import { UploadOutlined, CheckCircleOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { validateUsers, importUsers } from '../../store/userSlice';
-import Papa from 'papaparse';
 import { User, ImportResult } from '../../types/user';
-import { ImportResults } from './ImportResults';
-import { logger, LogData } from '../../utils/logger';
+import { ImportResults } from '../ImportResults/ImportResults';
+import { logger } from '../../utils/logger';
+import { FileUpload } from '../FileUpload/FileUpload';
+import { StepProgress } from '../StepProgress/StepProgress';
+import { validateUserData } from '../../utils/validation';
 
-const { Dragger } = Upload;
 const { Title } = Typography;
+const { Search } = Input;
 
-const steps = [
+interface CustomStep extends StepProps {
+  key: string;
+  status?: 'wait' | 'process' | 'finish' | 'error';
+}
+
+const steps: CustomStep[] = [
   {
+    key: 'upload',
     title: 'Upload',
     icon: <UploadOutlined />,
   },
   {
+    key: 'validate',
     title: 'Validate',
     icon: <CheckCircleOutlined />,
+    status: 'process',
   },
   {
+    key: 'import',
     title: 'Import',
     icon: <CheckCircleOutlined />,
   },
 ];
 
-interface CustomRequestInterface {
-  file: RcFile | string | Blob;
-  onSuccess?: (body: unknown, xhr?: XMLHttpRequest) => void;
-  onError?: (error: Error, body?: unknown) => void;
-  onProgress?: (event: { percent: number }) => void;
+const columns: ColumnsType<User> = [
+  {
+    title: 'First Name',
+    dataIndex: 'firstName',
+    key: 'firstName',
+    sorter: (a: User, b: User) => (a.firstName || '').localeCompare(b.firstName || ''),
+  },
+  {
+    title: 'Last Name',
+    dataIndex: 'lastName',
+    key: 'lastName',
+    sorter: (a: User, b: User) => (a.lastName || '').localeCompare(b.lastName || ''),
+  },
+  {
+    title: 'Email',
+    dataIndex: 'email',
+    key: 'email',
+    sorter: (a: User, b: User) => (a.email || '').localeCompare(b.email || ''),
+  },
+  {
+    title: 'Phone',
+    dataIndex: 'phoneNumber',
+    key: 'phoneNumber',
+  },
+  {
+    title: 'Status',
+    dataIndex: 'status',
+    key: 'status',
+    filters: [
+      { text: 'Active', value: 'active' },
+      { text: 'Inactive', value: 'inactive' },
+    ],
+    onFilter: (value, record: User) => record.status === value,
+  },
+];
+
+interface UserWithKey extends User {
+  key: string;
 }
 
 export const UserImport: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [parsedUsers, setParsedUsers] = useState<User[]>([]);
+  const [parsedUsers, setParsedUsers] = useState<UserWithKey[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UserWithKey[]>([]);
   const [validationResult, setValidationResult] = useState<ImportResult | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const dispatch = useAppDispatch();
 
+  const handleFileProcessed = (data: User[]) => {
+    const usersWithKeys = data.map((user, index) => ({
+      ...user,
+      key: index.toString(),
+    }));
+    setParsedUsers(usersWithKeys);
+    setFilteredUsers(usersWithKeys);
+    setSelectedRowKeys(usersWithKeys.map(user => user.key));
+    setCurrentStep(1);
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    if (!value.trim()) {
+      setFilteredUsers(parsedUsers);
+      setSelectedRowKeys(parsedUsers.map(user => user.key));
+      return;
+    }
+
+    const searchLower = value.toLowerCase();
+    const filtered = parsedUsers.filter(user => 
+      user.firstName?.toLowerCase().includes(searchLower) ||
+      user.lastName?.toLowerCase().includes(searchLower) ||
+      user.email?.toLowerCase().includes(searchLower)
+    );
+    setFilteredUsers(filtered);
+    setSelectedRowKeys(filtered.map(user => user.key));
+  };
+
   const handleValidate = async () => {
-    logger.info('Starting validation', { userCount: parsedUsers.length });
+    const selectedUsers = filteredUsers.filter(user => selectedRowKeys.includes(user.key));
+    logger.info('Starting validation', { userCount: selectedUsers.length });
+    setIsProcessing(true);
     try {
-      const result = await dispatch(validateUsers(parsedUsers)).unwrap();
+      const result = await dispatch(validateUsers(selectedUsers)).unwrap();
       logger.info('Validation completed', { result });
       setValidationResult(result);
       if (result.failed.length === 0) {
-        message.success('Validation successful!');
         setCurrentStep(2);
-      } else {
-        message.warning('Some users failed validation. Please check the results.');
-        logger.warn('Validation found errors', { failedCount: result.failed.length });
       }
     } catch (error) {
-      logger.error('Validation failed', { error: error as LogData });
-      message.error('Failed to validate users');
+      logger.error('Validation failed', { error });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleImport = async () => {
-    logger.info('Starting import', { userCount: parsedUsers.length });
+    const selectedUsers = filteredUsers.filter(user => selectedRowKeys.includes(user.key));
+    logger.info('Starting import', { userCount: selectedUsers.length });
+    setIsProcessing(true);
     try {
-      const result = await dispatch(importUsers(parsedUsers)).unwrap();
+      const result = await dispatch(importUsers(selectedUsers)).unwrap();
       logger.info('Import completed', { result });
       setImportResult(result);
-      if (result.failed.length === 0) {
-        message.success('All users imported successfully!');
-      } else {
-        message.warning('Some users failed to import. Please check the results.');
-        logger.warn('Import found errors', { failedCount: result.failed.length });
-      }
+      steps[1].status = 'finish';
     } catch (error) {
-      logger.error('Import failed', { error: error as LogData });
-      message.error('Failed to import users');
+      logger.error('Import failed', { error });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const props = {
-    name: 'file',
-    multiple: false,
-    accept: '.csv',
-    showUploadList: false,
-    'data-testid': 'file-input',
-    customRequest: async ({ file, onSuccess, onError }: CustomRequestInterface) => {
-      try {
-        logger.info('Starting file upload process');
-        const actualFile = file as RcFile;
-        if (actualFile.type !== 'text/csv') {
-          const error = new Error('Please upload a CSV file');
-          logger.error('Invalid file type', { type: actualFile.type });
-          message.error(error.message);
-          if (onError) onError(error);
-          return;
-        }
+  const handleStartOver = () => {
+    setParsedUsers([]);
+    setFilteredUsers([]);
+    setValidationResult(null);
+    setImportResult(null);
+    setSearchTerm('');
+    setCurrentStep(0);
+    setIsProcessing(false);
+    setSelectedRowKeys([]);
+  };
 
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const text = e.target?.result as string;
-          if (text) {
-            logger.debug('Parsing CSV file');
-            const { data, errors } = Papa.parse<User>(text, { header: true });
-            if (errors.length > 0) {
-              const error = new Error('Error parsing CSV file');
-              logger.error('CSV parsing failed', { errors });
-              message.error(error.message);
-              if (onError) onError(error);
-              return;
-            }
-            logger.info('File parsed successfully', { recordCount: data.length });
-            setParsedUsers(data);
-            setCurrentStep(1);
-            message.success('File uploaded successfully');
-            if (onSuccess) onSuccess(data);
-          }
-        };
-        reader.readAsText(actualFile);
-      } catch (error) {
-        logger.error('File upload failed', { error: error as LogData });
-        if (onError) onError(error as Error);
-      }
+  const handleCancel = () => {
+    if (isProcessing) {
+      logger.info('Operation cancelled by user');
+      setIsProcessing(false);
+    }
+  };
+
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (newSelectedRowKeys: React.Key[]) => {
+      setSelectedRowKeys(newSelectedRowKeys);
     },
   };
 
   return (
-    <Card data-testid="file-upload-area">
-      <Title level={3}>Bulk User Import</Title>
-      <Steps current={currentStep} items={steps} style={{ marginBottom: 24 }} />
+    <Card data-testid="user-import">
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Title level={3}>Bulk User Import</Title>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={handleStartOver}
+            data-testid="start-over-button"
+          >
+            Start Over
+          </Button>
+        </div>
+
+        <StepProgress
+          steps={steps}
+          current={currentStep}
+          data-testid="user-import-steps"
+        />
+
         {currentStep === 0 && (
-          <Dragger {...props}>
-            <p className="ant-upload-drag-icon">
-              <InboxOutlined />
-            </p>
-            <p className="ant-upload-text">Click or drag file to this area to upload</p>
-            <p className="ant-upload-hint">
-              Support for a single CSV file upload. Please ensure your file follows the required format.
-            </p>
-          </Dragger>
+          <FileUpload<User>
+            onFileProcessed={handleFileProcessed}
+            validateRow={validateUserData}
+            accept=".csv"
+            data-testid="user-import-file-upload"
+          />
         )}
 
-        {currentStep === 1 && (
+        {currentStep > 0 && !importResult && (
+          <>
+            <Search
+              placeholder="Search by name or email"
+              allowClear
+              enterButton={<SearchOutlined />}
+              size="large"
+              value={searchTerm}
+              onChange={e => handleSearch(e.target.value)}
+              data-testid="user-search"
+            />
+
+            <Alert
+              message={`${selectedRowKeys.length} of ${parsedUsers.length} users selected${searchTerm ? ' (filtered)' : ''}`}
+              type="info"
+              showIcon
+            />
+
+            <Table
+              dataSource={filteredUsers}
+              columns={columns}
+              rowSelection={rowSelection}
+              size="middle"
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: true,
+                showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} users`,
+              }}
+              data-testid="users-table"
+            />
+          </>
+        )}
+
+        {currentStep === 1 && !importResult && (
           <div>
-            <Button type="primary" onClick={handleValidate} data-testid="validate-button">
-              Validate Users
-            </Button>
+            <Space>
+              <Button
+                type="primary"
+                onClick={handleValidate}
+                loading={isProcessing}
+                disabled={selectedRowKeys.length === 0}
+                data-testid="validate-button"
+              >
+                Validate Users
+              </Button>
+              {isProcessing && (
+                <Button onClick={handleCancel} data-testid="cancel-button">
+                  Cancel
+                </Button>
+              )}
+            </Space>
             {validationResult && <ImportResults result={validationResult} />}
           </div>
         )}
 
-        {currentStep === 2 && (
+        {(currentStep === 2 || importResult) && (
           <div>
-            <Button type="primary" onClick={handleImport} data-testid="import-button">
-              Import Users
-            </Button>
-            {importResult && <ImportResults result={importResult} />}
+            {!importResult && (
+              <Space>
+                <Button
+                  type="primary"
+                  onClick={handleImport}
+                  loading={isProcessing}
+                  disabled={selectedRowKeys.length === 0}
+                  data-testid="import-button"
+                >
+                  Import Users
+                </Button>
+                {isProcessing && (
+                  <Button onClick={handleCancel} data-testid="cancel-button">
+                    Cancel
+                  </Button>
+                )}
+              </Space>
+            )}
+            
+            {importResult && (
+              <div data-testid="import-results">
+                <Alert
+                  message="Import Complete"
+                  description={
+                    <div>
+                      <Typography.Text>
+                        Total records processed: {importResult.totalProcessed}
+                      </Typography.Text>
+                      <br />
+                      <Typography.Text type="success">
+                        Successfully imported: {importResult.successful.length}
+                      </Typography.Text>
+                      {importResult.failed.length > 0 && (
+                        <>
+                          <br />
+                          <Typography.Text type="danger">
+                            Failed records: {importResult.failed.length}
+                          </Typography.Text>
+                        </>
+                      )}
+                      <div style={{ marginTop: 8 }}>
+                        <Typography.Text type="secondary">
+                          Click Start Over to begin a new import.
+                        </Typography.Text>
+                      </div>
+                    </div>
+                  }
+                  type="success"
+                  showIcon
+                  style={{ marginBottom: 16 }}
+                />
+
+                {importResult.successful.length > 0 && (
+                  <Card 
+                    title={`Successfully Imported Users (${importResult.successful.length})`}
+                    style={{ marginBottom: 16 }}
+                  >
+                    <Table
+                      dataSource={importResult.successful.map((user, index) => ({
+                        ...user,
+                        key: index.toString()
+                      }))}
+                      columns={columns.filter(col => col.key !== 'status')}
+                      size="middle"
+                      pagination={{
+                        pageSize: 10,
+                        showSizeChanger: true,
+                        showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} users`,
+                      }}
+                      data-testid="imported-users-table"
+                    />
+                  </Card>
+                )}
+
+                {importResult.failed.length > 0 && (
+                  <Card 
+                    title={`Failed Records (${importResult.failed.length})`}
+                    type="inner"
+                  >
+                    <ImportResults result={importResult} showSummary={true} />
+                  </Card>
+                )}
+              </div>
+            )}
           </div>
         )}
       </Space>
     </Card>
-  );
-}; 
+  )
+}
