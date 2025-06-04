@@ -1,0 +1,3 @@
+firstName,lastName,email
+Invalid,Data,not-an-email
+Missing,Fields

@@ -17,10 +17,16 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": false,
+    "noEmit": true,
     "jsx": "react-jsx",
-    "outDir": "./build",
-    "sourceMap": true
+    "baseUrl": ".",
+    "paths": {
+      "*": ["src/types/*"]
+    },
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ]
   },
   "include": [
     "src"
