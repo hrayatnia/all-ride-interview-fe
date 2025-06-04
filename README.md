@@ -1,6 +1,13 @@
-# All Ride User Management
+# AllRide Frontend
 
-A React application for managing user imports in bulk.
+React-based frontend application for the AllRide User Management System, featuring bulk user import capabilities with real-time validation and feedback.
+
+## Local Development
+
+### Prerequisites
+- Node.js (v16 or later)
+- Yarn package manager
+- Backend service running (see main repository README)
 
 ## Environment Variables
 
@@ -105,3 +112,88 @@ You don't have to ever use `eject`. The curated feature set is suitable for smal
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+## Building for Production
+
+```bash
+yarn build
+```
+
+This creates a production build in the `build` directory.
+
+## Docker Support
+
+### Building the Image
+```bash
+docker build -t allride-frontend .
+```
+
+### Running with Docker
+```bash
+docker run -p 3000:80 allride-frontend
+```
+
+## Development Guidelines
+
+### Code Style
+- Follow TypeScript best practices
+- Use functional components with hooks
+- Implement proper error handling
+- Write unit tests for new components
+
+### Testing
+```bash
+# Run all tests
+yarn test
+
+# Run tests with coverage
+yarn test --coverage
+
+# Run specific test file
+yarn test ComponentName.test.tsx
+```
+
+### Proto Generation
+To update gRPC-web protobuf files:
+```bash
+./generate-proto.sh
+```
+
+## Project Structure
+
+```
+src/
+├── components/     # Reusable UI components
+├── config/        # Configuration files
+├── generated/     # Generated gRPC code
+├── hooks/         # Custom React hooks
+├── pages/         # Route components
+├── proto/         # Protobuf definitions
+├── services/      # API services
+├── store/         # Redux store
+├── types/         # TypeScript types
+└── utils/         # Utility functions
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. gRPC Connection Issues
+   - Check if the backend is running
+   - Verify Envoy proxy configuration
+   - Check browser console for CORS errors
+
+2. Build Issues
+   - Clear node_modules and reinstall
+   - Update protobuf generated files
+   - Check TypeScript errors
+
+## Contributing
+
+1. Create a feature branch
+2. Make your changes
+3. Run tests
+4. Submit a pull request
+
+See the main repository's CONTRIBUTING.md for more details.
