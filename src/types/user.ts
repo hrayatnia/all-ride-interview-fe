@@ -1,21 +1,21 @@
 export interface User {
-  id?: string;
+  key?: string;
   firstName: string;
   lastName: string;
   email: string;
-  phoneNumber: string;
-  address: string;
-  birthDate: string;
-  status: 'active' | 'inactive';
+  phoneNumber?: string;
+  address?: string;
+  birthDate?: string;
+  status?: 'active' | 'inactive';
 }
 
-export interface UserImportError {
+export interface ImportError {
   row: number;
   errors: string[];
 }
 
 export interface ImportResult {
   successful: User[];
-  failed: UserImportError[];
+  failed: ImportError[];
   totalProcessed: number;
 } 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Table, Typography, Alert, Space } from 'antd';
-import { ImportResult, User, UserImportError } from '../../types/user';
+import { ImportResult, User, ImportError } from '../../types/user';
 
 const { Title } = Typography;
 
@@ -62,7 +62,7 @@ export const ImportResults: React.FC<ImportResultsProps> = ({ result }) => {
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <Alert
           message={`Processed ${result.totalProcessed} users`}
-          description={`Successfully imported ${result.successful.length} users, failed to import ${result.failed.length} users.`}
+          description={`Successfully imported ${result.successful.length} users, failed to import ${result.failed.length} users`}
           type={result.failed.length === 0 ? 'success' : 'warning'}
           showIcon
         />
@@ -82,7 +82,7 @@ export const ImportResults: React.FC<ImportResultsProps> = ({ result }) => {
         {result.failed.length > 0 && (
           <>
             <Title level={4}>Failed Imports</Title>
-            <Table<UserImportError>
+            <Table<ImportError>
               dataSource={result.failed}
               columns={errorColumns}
               rowKey={(record) => record.row.toString()}
