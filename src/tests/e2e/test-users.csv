@@ -1,0 +1,3 @@
+firstName,lastName,email,phoneNumber,address,birthDate,status
+John,Doe,john.doe@example.com,+1234567890,123 Main St,1990-01-01,active
+Jane,Smith,jane.smith@example.com,+0987654321,456 Oak Ave,1992-03-15,active
