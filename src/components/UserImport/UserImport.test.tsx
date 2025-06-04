@@ -4,7 +4,6 @@ import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { UserImport } from './UserImport';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { validateUsers, importUsers } from '../../store/userSlice';
 import { User, ImportResult } from '../../types/user';
 
 // Mock the hooks and actions
@@ -240,4 +239,4 @@ describe('UserImport', () => {
       expect(screen.getByText(header)).toBeInTheDocument();
     });
   });
-}); 
+});

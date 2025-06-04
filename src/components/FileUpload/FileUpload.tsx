@@ -104,8 +104,8 @@ export function FileUpload<T extends object>({
     }
   };
 
-  const handleChange = (info: any) => {
-    const { file } = info;
+  const handleChange = (info: unknown) => {
+    const { file } = info as { file: { status: string; name: string } };
     if (file.status === 'error') {
       message.error(`${file.name} file upload failed.`);
     }
@@ -132,4 +132,4 @@ export function FileUpload<T extends object>({
       </Dragger>
     </div>
   );
-} 
+}

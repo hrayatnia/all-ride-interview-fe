@@ -11,7 +11,7 @@ export const ImportResults: React.FC<ImportResultsProps> = ({
   result,
   showSummary = true
 }) => {
-  const { successful, failed, totalProcessed } = result;
+  const { failed, totalProcessed } = result;
 
   return (
     <div data-testid="import-results">
@@ -38,4 +38,4 @@ export const ImportResults: React.FC<ImportResultsProps> = ({
       )}
     </div>
   );
-}; 
+};

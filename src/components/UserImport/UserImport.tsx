@@ -6,7 +6,7 @@ import { UploadOutlined, CheckCircleOutlined, SearchOutlined, ReloadOutlined } f
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { validateUsers, importUsers } from '../../store/userSlice';
 import { User, ImportResult } from '../../types/user';
-import { ImportResults } from './ImportResults';
+import { ImportResults } from '../ImportResults/ImportResults';
 import { logger } from '../../utils/logger';
 import { FileUpload } from '../FileUpload/FileUpload';
 import { StepProgress } from '../StepProgress/StepProgress';
@@ -306,7 +306,7 @@ export const UserImport: React.FC = () => {
                       )}
                       <div style={{ marginTop: 8 }}>
                         <Typography.Text type="secondary">
-                          Click "Start Over" to begin a new import.
+                          Click Start Over to begin a new import.
                         </Typography.Text>
                       </div>
                     </div>
@@ -343,7 +343,7 @@ export const UserImport: React.FC = () => {
                     title={`Failed Records (${importResult.failed.length})`}
                     type="inner"
                   >
-                    <ImportResults result={importResult} showSummary={false} />
+                    <ImportResults result={importResult} showSummary={true} />
                   </Card>
                 )}
               </div>
@@ -352,5 +352,5 @@ export const UserImport: React.FC = () => {
         )}
       </Space>
     </Card>
-  );
-}; 
+  )
+}

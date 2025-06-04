@@ -51,9 +51,9 @@ describe('validateUserData', () => {
   });
 
   it('validates status values', () => {
-    expect(validateUserData({ ...validUser, status: 'invalid' as any })).toBe(false);
+    expect(validateUserData({ ...validUser, status: 'invalid' as unknown })).toBe(false);
     expect(validateUserData({ ...validUser, status: 'active' })).toBe(true);
     expect(validateUserData({ ...validUser, status: 'inactive' })).toBe(true);
     expect(validateUserData({ ...validUser, status: undefined })).toBe(true);
   });
-}); 
+});
