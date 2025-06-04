@@ -71,7 +71,9 @@ static_resources:
         interval_jitter: 1s
         unhealthy_threshold: 3
         healthy_threshold: 1
-        grpc_health_check: {}
+        grpc_health_check:
+          service_name: "me.rayatnia.proto.UserService"
+          authority: "backend"
 
   - name: backend_http
     connect_timeout: 0.25s

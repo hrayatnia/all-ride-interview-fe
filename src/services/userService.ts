@@ -21,8 +21,9 @@ class UserService {
   private client: UserServiceClient;
 
   constructor() {
-    // The URL should match the backend's Envoy proxy
-    this.client = new UserServiceClient('http://localhost:8090');
+    // Use envoy service name when running in Docker, localhost otherwise
+    const envoyUrl = 'http://localhost:8090';
+    this.client = new UserServiceClient(envoyUrl);
   }
 
   async validateUserData(fileContent: Uint8Array, fileName: string): Promise<typeof proto.ValidateUserDataResponse> {
