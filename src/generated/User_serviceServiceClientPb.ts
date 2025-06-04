@@ -39,6 +39,49 @@ export class UserServiceClient {
     this.options_ = options;
   }
 
+  methodDescriptorValidateUserData = new grpcWeb.MethodDescriptor(
+    '/me.rayatnia.proto.UserService/ValidateUserData',
+    grpcWeb.MethodType.UNARY,
+    user_service_pb.ValidateUserDataRequest,
+    user_service_pb.ValidateUserDataResponse,
+    (request: user_service_pb.ValidateUserDataRequest) => {
+      return request.serializeBinary();
+    },
+    user_service_pb.ValidateUserDataResponse.deserializeBinary
+  );
+
+  validateUserData(
+    request: user_service_pb.ValidateUserDataRequest,
+    metadata?: grpcWeb.Metadata | null): Promise<user_service_pb.ValidateUserDataResponse>;
+
+  validateUserData(
+    request: user_service_pb.ValidateUserDataRequest,
+    metadata: grpcWeb.Metadata | null,
+    callback: (err: grpcWeb.RpcError,
+               response: user_service_pb.ValidateUserDataResponse) => void): grpcWeb.ClientReadableStream<user_service_pb.ValidateUserDataResponse>;
+
+  validateUserData(
+    request: user_service_pb.ValidateUserDataRequest,
+    metadata?: grpcWeb.Metadata | null,
+    callback?: (err: grpcWeb.RpcError,
+               response: user_service_pb.ValidateUserDataResponse) => void) {
+    if (callback !== undefined) {
+      return this.client_.rpcCall(
+        this.hostname_ +
+          '/me.rayatnia.proto.UserService/ValidateUserData',
+        request,
+        metadata || {},
+        this.methodDescriptorValidateUserData,
+        callback);
+    }
+    return this.client_.unaryCall(
+    this.hostname_ +
+      '/me.rayatnia.proto.UserService/ValidateUserData',
+    request,
+    metadata || {},
+    this.methodDescriptorValidateUserData);
+  }
+
   methodDescriptorUploadUserData = new grpcWeb.MethodDescriptor(
     '/me.rayatnia.proto.UserService/UploadUserData',
     grpcWeb.MethodType.UNARY,
